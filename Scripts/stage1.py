@@ -42,21 +42,33 @@ num_classes = len(class_names)
 class CNN_simples(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.pool = nn.MaxPool2d(2, 2)
+        self.first_block = nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),  # 16x16
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),
+            nn.ReLU())
+        self.second_block = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 8x8
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU())
+        self.third_block = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2), # 4x4
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.ReLU())
         self.flatten = nn.Flatten()
-        self.fc1 = nn.Linear(64 * 4 * 4, 512)
-        self.fc2 = nn.Linear(512, 10)
-        self.relu = nn.ReLU()
+        self.fc1 = nn.Linear(256 * 4 * 4, 128) # 4*4 porque a imagem é reduzida a 4x4 no ultimo maxpool
+        self.fc2 = nn.Linear(128, num_classes)
+        
         
     def forward(self, x):
-        x = self.pool(self.relu(self.conv1(x)))
-        x = self.pool(self.relu(self.conv2(x)))
-        x = self.pool(self.relu(self.conv3(x)))
+        x = self.third_block(self.second_block(self.first_block(x)))
         x = self.flatten(x)
-        x = self.relu(self.fc1(x))
+        x = self.fc1(x)
         x = self.fc2(x)
         return x
 
@@ -144,8 +156,7 @@ def train(model, train_loader, optimizer, criterion, max_epochs, device, model_s
     plt.title('Acuracia do Treino e Validacao')
     plt.legend()
     plt.show()
-    # guardar a figura
-    plt.savefig('Acc_stage1.png')
+
         
     
 if __name__ == "__main__":
@@ -231,3 +242,14 @@ if __name__ == "__main__":
         plt.ylabel('Rótulos Verdadeiros')
         plt.tight_layout()
         plt.show()
+
+
+
+
+##############################################################################################################
+
+# Sem batchnormalization, a rede tende a memorizar os dados, o que resulta num overfitting como é possivel observar nas curvas de treino e validação.
+# A rede pode ser demasiado complexa para o conjunto de dados Cifar-10, levando a um desempenho inferior no conjunto de validação
+# A quantidade de neuronios e camadas na parte MLP poderá estar a contribuir para o overfitting, tal como o numero de filtros nas camadas convolucionais.
+
+##############################################################################################################
