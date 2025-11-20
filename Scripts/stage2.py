@@ -223,8 +223,8 @@ if __name__ == "__main__":
     optimizer_add_block = optim.Adam(model_add_block.parameters(), lr=0.001)
     optimizer_double_channels = optim.Adam(model_channels.parameters(), lr=0.001)
     max_epochs = 50
-    model_save_double_channels = "best_stage_2_1.pth"
-    model_save_add_block = "best_stage_2_2.pth"
+    model_save_double_channels = "models\\best_stage_2_1.pth"
+    model_save_add_block = "models\\best_stage_2_2.pth"
     print(device)
     if os.path.exists(model_save_double_channels):
         print(f"Existe um modelo salvo relativamente ao double channels.")

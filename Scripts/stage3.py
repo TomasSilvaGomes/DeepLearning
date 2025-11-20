@@ -238,7 +238,7 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model_channels.parameters(), lr=0.001, weight_decay=1e-4)
     max_epochs = 50
-    model_save_components = "best_stage_3.pth"
+    model_save_components = "models\\best_stage_3.pth"
     print(device)
     if os.path.exists(model_save_components):
         print(f"Existe um modelo salvo relativamente ao double channels.")

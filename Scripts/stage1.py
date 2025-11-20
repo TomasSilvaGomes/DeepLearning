@@ -166,7 +166,7 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     max_epochs = 50
-    model_save_path = "best_stage_1.pth"
+    model_save_path = "models\\best_stage_1.pth"
     print(device)
     if os.path.exists(model_save_path):
         print(f"Existe um modelo salvo.")
