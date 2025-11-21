@@ -50,7 +50,7 @@ num_classes = len(class_names)
 #        CNN         #
 ######################
 # Cnn 
-class CNN_double_channels(nn.Module):
+class CNN_residual_block(nn.Module):
     def __init__(self, num_classes=10): # Adicionei num_classes como parametro
         super().__init__()
         self.block1 = nn.Sequential(
@@ -233,8 +233,8 @@ def train(model, train_loader, optimizer, criterion, max_epochs, device, model_s
 if __name__ == "__main__":
     torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model_channels = CNN_double_channels().to(device)
-    model_add_block = CNN_double_channels().to(device)
+    model_channels = CNN_residual_block().to(device)
+    model_add_block = CNN_residual_block().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model_channels.parameters(), lr=0.001, weight_decay=1e-4)
     max_epochs = 50
