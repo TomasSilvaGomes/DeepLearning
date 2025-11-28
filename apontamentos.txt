@@ -1,0 +1,38 @@
+No Stage 1: 
+A falta de Dropout ou Batch Norm causou essa instabilidade.
+
+No Stage 2: Compara os tempos de treino. O modelo cnn_add_block (mais profundo) demorou mais ou menos que o CNN_double_channels? O PDF pede essa análise.
+
+No Stage 3: Justifica porque a Batch Normalization permitiu (provavelmente) uma convergência mais rápida ou taxas de aprendizagem mais altas sem explodir os gradientes.
+
+Sobre o stage 4 :
+
+Nao usamos nenhum import resnet18 do pytorch porque ela foi treinada no dataset da IMAGENET e nao cifar. Tendo recebido imagens 224x224 e nao 32x32.
+ResNet Standard (ImageNet): Começa com uma convolução 7x7 (stride 2) seguida de um MaxPool (stride 2). 
+A imagem de 32x32 passaria imediatamente para 8x8 antes mesmo de entrar nos blocos residuais se aplicassemos import.
+ResNet Adaptada : Começa com uma convolução 3x3 (stride 1) e remove o MaxPool inicial.
+Resultado: A imagem entra nos blocos residuais com 32x32, preservando a informação.
+
+==============================================================================
+==============================================================================
+
+Sobre o stage 5 :
+
+**Architecture Enhancements: Squeeze-and-Excitation (SE) blocks**
+Porquê: Adiciona uma capacidade de "atenção" leve aos canais da ResNet com custo computacional muito baixo. 
+É o padrão de ouro para melhorar arquiteturas CNN sem complicar o treino.
+
+
+**Training Pipeline Enhancements: MixUp**
+Porquê: É a técnica mais impactante para combater o overfitting e a memorização que observaste no Stage 4. 
+Substitui o Label Smoothing nesta categoria por ser uma modificação mais agressiva e eficaz na generalização.
+
+
+**Regularization & Stability: Learning Rate Warmup**
+Porquê: O PDF lista explicitamente o Warmup nesta secção.
+Contexto: Como estamos a usar uma Learning Rate alta (0.1) e introduzimos o MixUp (que torna o treino difícil), o início do treino pode ser instável. 
+O Warmup começa com um LR baixo e sobe gradualmente durante 5 épocas, estabilizando os gradientes iniciais antes de aplicar a força total do otimizador.
+
+Resultados Finais Stage 5:
+Test Accuracy: 96.13%
+Test Loss: 0.2287
