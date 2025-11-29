@@ -1,9 +1,20 @@
 No Stage 1: 
-A falta de Dropout ou Batch Norm causou essa instabilidade.
+Sem batchnormalization, a rede tende a memorizar os dados, o que resulta num overfitting como é possivel observar nas curvas de treino e validação.
+A rede pode ser demasiado complexa para o conjunto de dados Cifar-10, levando a um desempenho inferior no conjunto de validação
+A quantidade de neuronios e camadas na parte MLP poderá estar a contribuir para o overfitting, tal como o numero de filtros nas camadas convolucionais.
 
-No Stage 2: Compara os tempos de treino. O modelo cnn_add_block (mais profundo) demorou mais ou menos que o CNN_double_channels? O PDF pede essa análise.
+==============================================================================
+==============================================================================
+
+No Stage 2: Compara os tempos de treino. O modelo cnn_add_block (mais profundo) demorou mais ou menos que o CNN_double_channels?
+
+==============================================================================
+==============================================================================
 
 No Stage 3: Justifica porque a Batch Normalization permitiu (provavelmente) uma convergência mais rápida ou taxas de aprendizagem mais altas sem explodir os gradientes.
+
+==============================================================================
+==============================================================================
 
 Sobre o stage 4 :
 
@@ -34,5 +45,5 @@ Contexto: Como estamos a usar uma Learning Rate alta (0.1) e introduzimos o MixU
 O Warmup começa com um LR baixo e sobe gradualmente durante 5 épocas, estabilizando os gradientes iniciais antes de aplicar a força total do otimizador.
 
 Resultados Finais Stage 5:
-Test Accuracy: 96.13%
-Test Loss: 0.2287
+Test Accuracy: 96.11%
+Test Loss: 0.2362
