@@ -3,15 +3,38 @@ Sem batchnormalization, a rede tende a memorizar os dados, o que resulta num ove
 A rede pode ser demasiado complexa para o conjunto de dados Cifar-10, levando a um desempenho inferior no conjunto de validação
 A quantidade de neuronios e camadas na parte MLP poderá estar a contribuir para o overfitting, tal como o numero de filtros nas camadas convolucionais.
 
-==============================================================================
-==============================================================================
-
-No Stage 2: Compara os tempos de treino. O modelo cnn_add_block (mais profundo) demorou mais ou menos que o CNN_double_channels?
+Total params: 960,298
+Trainable params: 960,298
 
 ==============================================================================
 ==============================================================================
 
-No Stage 3: Justifica porque a Batch Normalization permitiu (provavelmente) uma convergência mais rápida ou taxas de aprendizagem mais altas sem explodir os gradientes.
+No Stage 2: 
+
+Double channels:
+Total params: 1,671,114
+Trainable params: 1,671,114
+Acurácia do modelo carregado: 91.94%
+Tempo : 6 minutos e 26 segundos
+
+
+Add Block:
+Total params: 4,041,514
+Trainable params: 4,041,514
+Acurácia do modelo carregado: 86.72%
+Tempo : 10 minutos e 52 segundos
+
+
+
+
+==============================================================================
+==============================================================================
+
+No Stage 3: Batch Normalization e Residual Connections permitiram uma convergência mais rápida e taxas de aprendizagem mais altas sem explodir os gradientes.
+
+Total params: 1,714,314
+Trainable params: 1,714,314
+Tempo : 13 minutos e 11 segundos
 
 ==============================================================================
 ==============================================================================
@@ -24,6 +47,11 @@ A imagem de 32x32 passaria imediatamente para 8x8 antes mesmo de entrar nos bloc
 ResNet Adaptada : Começa com uma convolução 3x3 (stride 1) e remove o MaxPool inicial.
 Resultado: A imagem entra nos blocos residuais com 32x32, preservando a informação.
 
+Total params: 11,173,962
+Trainable params: 11,173,962
+
+ Tempo total de treino: 46.06 minutos
+ Acurácia Final no Test Set: 95.62%
 ==============================================================================
 ==============================================================================
 
@@ -35,15 +63,19 @@ Porquê: Adiciona uma capacidade de "atenção" leve aos canais da ResNet com cu
 
 
 **Training Pipeline Enhancements: MixUp**
-Porquê: É a técnica mais impactante para combater o overfitting e a memorização que observaste no Stage 4. 
-Substitui o Label Smoothing nesta categoria por ser uma modificação mais agressiva e eficaz na generalização.
+Porquê: É a técnica mais impactante para combater o overfitting e a memorização no Stage 4. 
+Substituí o Label Smoothing nesta categoria por ser uma modificação mais agressiva e eficaz na generalização.
 
 
 **Regularization & Stability: Learning Rate Warmup**
-Porquê: O PDF lista explicitamente o Warmup nesta secção.
 Contexto: Como estamos a usar uma Learning Rate alta (0.1) e introduzimos o MixUp (que torna o treino difícil), o início do treino pode ser instável. 
 O Warmup começa com um LR baixo e sobe gradualmente durante 5 épocas, estabilizando os gradientes iniciais antes de aplicar a força total do otimizador.
 
 Resultados Finais Stage 5:
 Test Accuracy: 96.11%
 Test Loss: 0.2362
+
+Total params: 11,261,002
+Trainable params: 11,261,002
+
+Tempo total: 2 horas e 47 minutos

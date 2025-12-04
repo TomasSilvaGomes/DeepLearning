@@ -5,26 +5,12 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import numpy as np
 import matplotlib.pyplot as plt
-import os 
 from tqdm import tqdm
+from sklearn import metrics
+import os
+from torchinfo import summary
+from stage4 import validation
 
-# Importação da validação (assume que retorna: loss, acc)
-try:
-    from stage3 import validation
-except ImportError:
-    def validation(model, val_loader, criterion, device):
-        model.eval()
-        running_loss, correct, total = 0.0, 0, 0
-        with torch.no_grad():
-            for inputs, labels in val_loader:
-                inputs, labels = inputs.to(device), labels.to(device)
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
-                running_loss += loss.item() * inputs.size(0)
-                _, preds = outputs.max(1)
-                correct += preds.eq(labels).sum().item()
-                total += labels.size(0)
-        return running_loss / len(val_loader.dataset), 100. * correct / total
 
 #############################
 # Configurações & Dados     #
@@ -54,7 +40,7 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, nu
 val_loader = DataLoader(test_dataset, batch_size=100, shuffle=False, num_workers=2, pin_memory=True)
 
 ########################################################
-# [cite_start]1. Architecture Enhancement: SE Block [cite: 85, 86] #
+#       1. Architecture Enhancement: SE Block          #
 ########################################################
 class SEBlock(nn.Module):
     def __init__(self, in_channels, reduction=16):
@@ -135,7 +121,7 @@ class ResNet18_SE(nn.Module):
         return out
 
 ###########################################################
-# [cite_start]2. Pipeline Enhancement: MixUp [cite: 92, 93]           #
+#            2. Pipeline Enhancement: MixUp               #
 ###########################################################
 def mixup_data(x, y, alpha=1.0, device='cuda'):
     if alpha > 0:
@@ -228,42 +214,105 @@ def train_stage5(model, train_loader, val_loader, optimizer, scheduler, device, 
     return history
 
 if __name__ == "__main__":
-    if not os.path.exists("models"):
-        os.makedirs("models")
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Hardware: {device}")
-    
     model = ResNet18_SE(num_classes=10).to(device)
-    optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-    scheduler = get_scheduler(optimizer, WARMUP_EPOCHS, MAX_EPOCHS)
-    
-    print("Iniciando Treino Stage 5: SE-Blocks + MixUp + LR Warmup")
-    
-    history = train_stage5(model, train_loader, val_loader, optimizer, scheduler, device, MAX_EPOCHS)
-    
-    # --- PLOT FINAL COM 2 SUBPLOTS ---
-    plt.figure(figsize=(15,5))
-    
-    # Subplot 1: Accuracy (Train vs Val)
-    plt.subplot(1, 2, 1)
-    plt.plot(history['train_acc'], label='Train Accuracy (Weighted)', color='blue', alpha=0.7)
-    plt.plot(history['val_acc'], label='Validation Accuracy', color='orange', linewidth=2)
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy (%)')
-    plt.title('Accuracy: Train (MixUp) vs Validation')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
+    print(f"Hardware: {device}")
+    print(summary(model, input_size=(BATCH_SIZE, 3, 32, 32), col_names=["input_size", "output_size", "num_params", "mult_adds"]))
 
-    # Subplot 2: Loss (Train vs Val)
-    plt.subplot(1, 2, 2)
-    plt.plot(history['train_loss'], label='Train Loss (MixUp)', color='blue', alpha=0.7)
-    plt.plot(history['val_loss'], label='Validation Loss', color='red', linewidth=2)
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Loss: Train vs Validation')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    
-    plt.tight_layout()
-    plt.show()
+    if os.path.exists("models\\best_stage5_se_mixup_warmup.pth"):
+        print("Modelo pré-treinado encontrado. Carregando pesos...")
+        model.load_state_dict(torch.load("models\\best_stage5_se_mixup_warmup.pth"))
+
+        # matriz de confusão
+        criterion = nn.CrossEntropyLoss()
+        val_loss, val_acc = validation(model, val_loader, criterion, device)
+        print(f"Validação do modelo carregado - Loss: {val_loss:.4f}, Acc: {val_acc:.2f}%")
+        
+        all_preds = []
+        all_labels = []
+        running_loss = 0.0
+        criterion = nn.CrossEntropyLoss()
+
+        print("A avaliar o modelo final...")
+        with torch.no_grad():
+            for inputs, labels in val_loader:
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                
+                running_loss += loss.item() * inputs.size(0)
+                _, preds = outputs.max(1)
+                all_preds.extend(preds.cpu().numpy())
+                all_labels.extend(labels.cpu().numpy())
+
+        final_loss = running_loss / len(test_dataset)
+        final_acc = metrics.accuracy_score(all_labels, all_preds) * 100
+
+
+        print(f"Resultados Finais Stage 5:")
+        print(f"Test Accuracy: {final_acc:.2f}%")
+        print(f"Test Loss: {final_loss:.4f}")
+
+        # --- Plot Matriz de Confusão ---
+        cm = metrics.confusion_matrix(all_labels, all_preds)
+        plt.figure(figsize=(10,8))
+        plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Greens)
+        plt.title(f"Stage 5 Confusion Matrix (Acc: {final_acc:.2f}%)")
+        plt.colorbar()
+        class_names = test_dataset.classes
+        tick_marks = np.arange(len(class_names))
+        plt.xticks(tick_marks, class_names, rotation=45)
+        plt.yticks(tick_marks, class_names)
+
+        thresh = cm.max() / 2.
+        for i in range(len(class_names)):
+            for j in range(len(class_names)):
+                plt.text(j, i, format(cm[i, j], 'd'),
+                        ha="center", va="center",
+                        color="white" if cm[i, j] > thresh else "black")
+
+        plt.ylabel('True Label')
+        plt.xlabel('Predicted Label')
+        plt.tight_layout()
+        plt.show()
+
+
+
+    else:
+
+        optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
+        scheduler = get_scheduler(optimizer, WARMUP_EPOCHS, MAX_EPOCHS)
+        
+        print("Iniciando Treino Stage 5: SE-Blocks + MixUp + LR Warmup")
+        
+        history = train_stage5(model, train_loader, val_loader, optimizer, scheduler, device, MAX_EPOCHS)
+        
+        # --- PLOT FINAL COM 2 SUBPLOTS ---
+        plt.figure(figsize=(15,5))
+        
+        # Subplot 1: Accuracy (Train vs Val)
+        plt.subplot(1, 2, 1)
+        plt.plot(history['train_acc'], label='Train Accuracy (Weighted)', color='blue', alpha=0.7)
+        plt.plot(history['val_acc'], label='Validation Accuracy', color='orange', linewidth=2)
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy (%)')
+        plt.title('Accuracy: Train (MixUp) vs Validation')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+
+        # Subplot 2: Loss (Train vs Val)
+        plt.subplot(1, 2, 2)
+        plt.plot(history['train_loss'], label='Train Loss (MixUp)', color='blue', alpha=0.7)
+        plt.plot(history['val_loss'], label='Validation Loss', color='red', linewidth=2)
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.title('Loss: Train vs Validation')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        plt.show()
+
+
+        

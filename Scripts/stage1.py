@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics
 import os 
-from torchsummary import summary
+from torchinfo import summary
 from tqdm import tqdm
-
+import torch
 
 
 
@@ -170,10 +170,10 @@ if __name__ == "__main__":
     print(device)
     if os.path.exists(model_save_path):
         print(f"Existe um modelo salvo.")
-        summary(model, input_size=(3, 32, 32))
+        summary(model, input_size=(64, 3, 32, 32), col_names=["input_size", "output_size", "num_params", "mult_adds"])
         model.load_state_dict(torch.load(model_save_path))
         model.eval()
-        acc = validation(model, val_loader, criterion, device)[1]
+        acc = validation(model, test_loader, criterion, device)[-1]
         print(f"Acurácia do modelo carregado: {acc:.2f}%")
 
         all_preds = []
@@ -210,7 +210,7 @@ if __name__ == "__main__":
     else:
         print("Nao existe modelo salvo. A treinar modelo do zero.")
         model = model.to(device)
-        summary(model, input_size=(3, 32, 32))
+        summary(model, input_size=(3, 32, 32), col_names=["input_size", "output_size", "num_params", "mult_adds"])
         train(model, train_loader, optimizer, criterion, max_epochs, device, model_save_path)
         all_preds = []
         all_labels = []

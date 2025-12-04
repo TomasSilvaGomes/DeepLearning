@@ -7,15 +7,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn import metrics
 import os 
-from torchsummary import summary
+from torchinfo import summary
 from tqdm import tqdm
 import time 
 
 ######################
 #  Dataset Cifar-10  #
 ######################
-# Mantivemos as tuas transformações do Stage 3, pois incluem RandomErasing
-# que é benéfico, e as Augmentations standard (Flip/Crop) exigidas [cite: 69]
+
 train_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(p=0.5),
     transforms.RandomCrop(32, padding=4),
@@ -47,7 +46,6 @@ num_classes = len(class_names)
 ##########################################
 #  Arquitetura ResNet-18 (CIFAR Adapted) #
 ##########################################
-# Implementação from scratch conforme exigido em [cite: 61, 65, 66]
 
 class BasicBlock(nn.Module):
     expansion = 1
@@ -226,38 +224,36 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"A usar dispositivo: {device}")
     
-    # Configurações do Stage 4 [cite: 72, 74]
+    
+    # Configurações do Stage 4
     max_epochs = 200 
     model_save_path = "models\\best_stage_4_resnet18.pth"
     if not os.path.exists("models"):
         os.makedirs("models")
 
-    # Instanciar ResNet-18
     model = ResNet18_CIFAR(num_classes=10).to(device)
     
-    # Optimizer e Scheduler Canonical para ResNet [cite: 70, 71]
+    # Optimizer e Scheduler para ResNet 
     # SGD com Momentum e Weight Decay
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
     
-    # Cosine Annealing Scheduler (muito comum para atingir SOTA em CIFAR)
+    # Cosine Annealing Scheduler
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max_epochs)
 
     if os.path.exists(model_save_path):
         print(f"Carregando modelo existente: {model_save_path}")
-        summary(model, input_size=(3, 32, 32))
-        model.load_state_dict(torch.load(model_save_path, map_location=device))
-        model.eval()
-        acc = validation(model, val_loader, criterion, device)[1]
-        print(f"Acurácia do modelo carregado (Val): {acc:.2f}%")
+        summary(model, input_size=(64, 3, 32, 32), col_names=["input_size", "output_size", "num_params", "mult_adds"])
+        model.load_state_dict(torch.load(model_save_path))
+
     else:
         print("Iniciando treino Stage 4 (ResNet-18 from scratch)...")
-        summary(model, input_size=(3, 32, 32))
+        summary(model, input_size=(64, 3, 32, 32), col_names=["input_size", "output_size", "num_params", "mult_adds"])
         train(model, train_loader, optimizer, criterion, scheduler, max_epochs, device, model_save_path)
 
-    # Avaliação Final no Test Set (Confusion Matrix)
+
     print("A gerar matriz de confusão no Test Set")
-    model.eval() # Garantir modo avaliação
+    model.eval()
     all_preds = []
     all_labels = []
     with torch.no_grad():
@@ -294,10 +290,8 @@ if __name__ == "__main__":
 
 
 ##############################################################################################################
-
-
+#
 #  Tempo total de treino: 46.06 minutos
 #  Acurácia Final no Test Set: 95.62%
 # 
-
 ##############################################################################################################

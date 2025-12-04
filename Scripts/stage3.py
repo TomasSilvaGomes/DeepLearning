@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import torchinfo
 from torchvision import datasets, transforms
 import numpy as np
 import pandas as pd
@@ -9,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics
 import os 
-from torchsummary import summary
+from torchinfo import summary 
 from tqdm import tqdm
 import time 
 
@@ -18,7 +19,7 @@ import time
 
 
 ######################
-#  Dataset Cifar-10  #O
+#  Dataset Cifar-10  #
 ######################
 train_transform = transforms.Compose([
     transforms.RandomHorizontalFlip(p=0.5),      # Fundamental para CIFAR-10
@@ -241,12 +242,12 @@ if __name__ == "__main__":
     model_save_components = "models\\best_stage_3.pth"
     print(device)
     if os.path.exists(model_save_components):
-        print(f"Existe um modelo salvo relativamente ao double channels.")
-        summary(model_channels, input_size=(3, 32, 32))
+        print(f"Existe um modelo salvo relativamente ao residual block.")
+        print(summary(model_channels, input_size=(64, 3, 32, 32), col_names=["input_size", "output_size", "num_params", "mult_adds"]))
         # The fixed line
         model_channels.load_state_dict(torch.load(model_save_components, map_location=torch.device('cpu')))
         model_channels.eval()
-        acc = validation(model_channels, val_loader, criterion, device)[1]
+        acc = validation(model_channels, test_loader, criterion, device)[-1]
         print(f"Acurácia do modelo carregado: {acc:.2f}%")
         all_preds = []
         all_labels = []
@@ -282,7 +283,6 @@ if __name__ == "__main__":
     if not os.path.exists(model_save_components):
         print("Nao existe modelo salvo. A treinar modelo do zero.")
         model_channels = model_channels.to(device)
-        summary(model_channels, input_size=(3, 32, 32))
         train(model_channels, train_loader, optimizer, criterion, max_epochs, device, model_save_components)
         all_preds = []
         all_labels = []

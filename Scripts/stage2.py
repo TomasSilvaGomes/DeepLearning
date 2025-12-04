@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn import metrics
 import os 
-from torchsummary import summary
+from torchinfo import summary
 from tqdm import tqdm
 import time 
 
@@ -228,11 +228,11 @@ if __name__ == "__main__":
     print(device)
     if os.path.exists(model_save_double_channels):
         print(f"Existe um modelo salvo relativamente ao double channels.")
-        summary(model_channels, input_size=(3, 32, 32))
+        summary(model_channels, input_size=(64, 3, 32, 32), col_names=["input_size", "output_size", "num_params", "mult_adds"])
         # The fixed line
         model_channels.load_state_dict(torch.load(model_save_double_channels, map_location=torch.device('cpu')))
         model_channels.eval()
-        acc = validation(model_channels, val_loader, criterion, device)[1]
+        acc = validation(model_channels, test_loader, criterion, device)[-1]
         print(f"Acurácia do modelo carregado: {acc:.2f}%")
 
         all_preds = []
@@ -304,11 +304,11 @@ if __name__ == "__main__":
     
     if os.path.exists(model_save_add_block):
         print(f"Existe um modelo salvo relativamente ao add block.")
-        summary(model_add_block, input_size=(3, 32, 32))
+        summary(model_add_block, input_size=(64, 3, 32, 32), col_names=["input_size", "output_size", "num_params", "mult_adds"])
         # The fixed line
         model_add_block.load_state_dict(torch.load(model_save_add_block, map_location=torch.device('cpu')))
         model_add_block.eval()
-        acc = validation(model_add_block, val_loader, criterion, device)[1]
+        acc = validation(model_add_block, test_loader, criterion, device)[-1]
         print(f"Acurácia do modelo carregado: {acc:.2f}%")
 
         all_preds = []
@@ -345,7 +345,6 @@ if __name__ == "__main__":
     if not os.path.exists(model_save_add_block):
         print("Nao existe modelo salvo. A treinar modelo do zero.")
         model_add_block = model_add_block.to(device)
-        summary(model_add_block, input_size=(3, 32, 32))
         train(model_add_block, train_loader, optimizer_add_block, criterion, max_epochs, device, model_save_add_block)
         all_preds = []
         all_labels = []
