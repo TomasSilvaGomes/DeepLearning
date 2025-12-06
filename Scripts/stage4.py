@@ -223,8 +223,16 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"A usar dispositivo: {device}")
+
+    def set_seed(seed=42):
+        torch.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        np.random.seed(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
     
-    
+    set_seed(42)
+
     # Configurações do Stage 4
     max_epochs = 200 
     model_save_path = "models\\best_stage_4_resnet18.pth"
