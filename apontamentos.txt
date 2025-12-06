@@ -58,18 +58,11 @@ Trainable params: 11,173,962
 Sobre o stage 5 :
 
 **Architecture Enhancements: Squeeze-and-Excitation (SE) blocks**
-Porquê: Adiciona uma capacidade de "atenção" leve aos canais da ResNet com custo computacional muito baixo. 
-É o padrão de ouro para melhorar arquiteturas CNN sem complicar o treino.
-
 
 **Training Pipeline Enhancements: MixUp**
-Porquê: É a técnica mais impactante para combater o overfitting e a memorização no Stage 4. 
-Substituí o Label Smoothing nesta categoria por ser uma modificação mais agressiva e eficaz na generalização.
-
 
 **Regularization & Stability: Learning Rate Warmup**
-Contexto: Como estamos a usar uma Learning Rate alta (0.1) e introduzimos o MixUp (que torna o treino difícil), o início do treino pode ser instável. 
-O Warmup começa com um LR baixo e sobe gradualmente durante 5 épocas, estabilizando os gradientes iniciais antes de aplicar a força total do otimizador.
+
 
 Resultados Finais Stage 5:
 Test Accuracy: 96.11%
